@@ -3,7 +3,10 @@ program TestSuperCell;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  uTestSuperCell in 'uTestSuperCell.pas' {Form1};
+  uTestSuperCell in 'uTestSuperCell.pas' {Form1},
+  XSuperJSON in '..\Lib\SuperObjext\XSuperJSON.pas',
+  XSuperObject in '..\Lib\SuperObjext\XSuperObject.pas',
+  OMB.Cells in '..\Lib\SuperCell\OMB.Cells.pas';
 
 {$R *.res}
 
