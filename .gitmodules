@@ -1,3 +1,6 @@
 [submodule "Lib/SuperObjext"]
 	path = Lib/SuperObjext
 	url = https://github.com/onryldz/x-superobject.git
+[submodule "Lib/SuperObject"]
+	path = Lib/SuperObject
+	url = https://github.com/onryldz/x-superobject.git
