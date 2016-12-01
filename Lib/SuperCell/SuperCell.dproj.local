@@ -1,15 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.441,=rtl.dcp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.302,E:\OCP\Projects\SuperCell\Lib\SuperCell\SuperCell.dproj=C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Package1.dproj</Transaction>
     <Transaction>1899.12.30 00:00:00.000.582,=dbrtl.dcp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.577,=fmx.dcp</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.441,=rtl.dcp</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.625,=C:\OCP\Projects\Kriv\SuperCell\Lib\SuperObject\XSuperObject.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.611,=C:\OCP\Projects\Kriv\SuperCell\Lib\SuperObject\XSuperJSON.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.586,=IndySystem.dcp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.856,=E:\OCP\Projects\SuperCell\Lib\SuperCell\OMB.Cells.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.577,=fmx.dcp</Transaction>
     <Transaction>1899.12.30 00:00:00.000.590,=IndyProtocols.dcp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.165,=E:\OCP\Projects\SuperCell\Lib\SuperObjext\XSuperObject.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.856,=E:\OCP\Projects\SuperCell\Lib\SuperCell\OMB.Cells.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.302,C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Package1.dproj=E:\OCP\Projects\SuperCell\Lib\SuperCell\SuperCell.dproj</Transaction>
     <Transaction>1899.12.30 00:00:00.000.594,=IndyCore.dcp</Transaction>
     <Transaction>1899.12.30 00:00:00.000.149,=E:\OCP\Projects\SuperCell\Lib\SuperObjext\XSuperJSON.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.165,=E:\OCP\Projects\SuperCell\Lib\SuperObjext\XSuperObject.pas</Transaction>
   </Transactions>
 </BorlandProject>

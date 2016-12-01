@@ -4,9 +4,9 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   uTestSuperCell in 'uTestSuperCell.pas' {Form1},
-  XSuperJSON in '..\Lib\SuperObjext\XSuperJSON.pas',
-  XSuperObject in '..\Lib\SuperObjext\XSuperObject.pas',
-  OMB.Cells in '..\Lib\SuperCell\OMB.Cells.pas';
+  OMB.Cells in '..\Lib\SuperCell\OMB.Cells.pas',
+  XSuperJSON in '..\Lib\SuperObject\XSuperJSON.pas',
+  XSuperObject in '..\Lib\SuperObject\XSuperObject.pas';
 
 {$R *.res}
 

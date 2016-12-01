@@ -1,16 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.482,C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Unit1.pas=E:\OCP\Projects\SuperCell\test\uTestSuperCell.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.649,=C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.680,C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Project1.dproj=E:\OCP\Projects\SuperCell\test\TestSuperCell.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.387,C:\OCP\Projects\Kriv\SuperCell\test\Profiling\AQtimeModule1.aqt=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.582,=C:\OCP\Projects\Kriv\SuperCell\test\Profiling\AQtimeModule1.aqt</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.556,=C:\OCP\Projects\Kriv\SuperCell\Lib\SuperObject\XSuperObject.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.534,=C:\OCP\Projects\Kriv\SuperCell\Lib\SuperObject\XSuperJSON.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.445,=E:\OCP\Projects\SuperCell\test\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.680,C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Project1.dproj=E:\OCP\Projects\SuperCell\test\TestSuperCell.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.170,=E:\OCP\Projects\SuperCell\Lib\SuperObjext\XSuperJSON.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.193,=E:\OCP\Projects\SuperCell\Lib\SuperObjext\XSuperObject.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.864,E:\OCP\Projects\SuperCell\Lib\SuperCell\OMB.Cells.pas=E:\OCP\Projects\SuperCell\test\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.170,=E:\OCP\Projects\SuperCell\Lib\SuperObjext\XSuperJSON.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.649,=C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.482,C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Unit1.pas=E:\OCP\Projects\SuperCell\test\uTestSuperCell.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.482,C:\Users\Vic\Documents\Embarcadero\Studio\Projects\Unit1.fmx=E:\OCP\Projects\SuperCell\test\uTestSuperCell.fmx</Transaction>
   </Transactions>
 	<ActiveMobileDevice>
-		<NoProfile iOSSimulator="iPhone5"/>
+		<NoProfile iOSSimulator="iPhone5" Android="edeabac7"/>
+		<Paaa iOSSimulator="iPhone5"/>
 	</ActiveMobileDevice>
 </BorlandProject>

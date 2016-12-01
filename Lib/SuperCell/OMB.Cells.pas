@@ -2,12 +2,14 @@ unit OMB.Cells;
 
 interface
 
-uses Sysutils, Classes, FMX.Controls, FMX.Graphics, FMX.Types,
-  System.Generics.Collections, System.Types, System.Rtti,
-  System.UITypes, XSuperObject;
+uses Sysutils, Classes, FMX.Controls, FMX.Graphics, FMX.Types, System.TypInfo,
+  System.Generics.Collections, System.Types, System.Rtti, Variants, System.NetEncoding,
+  System.UITypes, XSuperObject,Xml.XMLDoc, Xml.XMLIntf, Xml.xmldom, FMX.Objects,
+  System.Diagnostics, FMX.ani, FMX.Utils;
 
 type
-  TOMBElemetAlign = (None, Left, Right, Top, Bottom, Center, Client, Contents);
+  TOMBElemetAlign = (Left, Right, Top, Bottom, Center, Client, Contents);
+//  TOMBImageWrapMode = (Origin, Center, );
 
   TOMBProperty = record
     Str : string;
@@ -26,42 +28,31 @@ type
 
   TOMBObject = class
   private
+    FName: String;
     function GetJSON: ISuperObject; virtual;
     procedure SetJSON(const Value: ISuperObject); virtual;
+    procedure SetName(const Value: String);
+
+    procedure AssingName;
+    class function GetNodeName : String;
+  protected
+    function GetStructure: String; virtual;
+    procedure SetStructure(const Value: String); virtual;
+
+    procedure SaveToNode(aXMLNode :  IXMLNode); virtual;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); virtual;
+    function IsNeedSave : Boolean; virtual;
   public
     constructor Create; virtual;
+    destructor Destroy; override;
+    procedure Save(Doc : IXMLDocument);
+    class function Load(Doc : IXMLDocument) : TOMBObject;
+    property Structure: String read GetStructure write SetStructure;
     property JSON : ISuperObject read GetJSON write SetJSON;
+    property Name : String read FName write SetName;
   end;
 
   TOMBClass = class of TOMBObject;
-
-  TOMBBounds = class(TOMBObject)
-  private
-    FWidth: TOMBProperty;
-    FTop: TOMBProperty;
-    FHeight: TOMBProperty;
-    FLeft: TOMBProperty;
-    procedure SetHeight(const Value: TOMBProperty);
-    procedure SetLeft(const Value: TOMBProperty);
-    procedure SetTop(const Value: TOMBProperty);
-    procedure SetWidth(const Value: TOMBProperty);
-    function GetJSON: ISuperObject; override;
-    procedure SetJSON(const Value: ISuperObject); override;
-  private const
-    str_Width   = 'width';
-    str_Height  = 'height';
-    str_Top     = 'top';
-    str_Left    = 'left';
-  protected
-    [weak] FParent: TOMBElement;
-    procedure Changed;
-  public
-    constructor Create; override;
-    property Left : TOMBProperty read FLeft write SetLeft;
-    property Top : TOMBProperty read FTop write SetTop;
-    property Width : TOMBProperty read FWidth write SetWidth;
-    property Height : TOMBProperty read FHeight write SetHeight;
-  end;
 
   TOMBMargins = class(TOMBObject)
   private
@@ -80,11 +71,15 @@ type
     str_Bottom  = 'bottom';
     function GetJSON: ISuperObject; override;
     procedure SetJSON(const Value: ISuperObject); override;
+    procedure SaveToNode(aXMLNode :  IXMLNode); override;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
+    function IsNeedSave : Boolean; override;
   protected
     [weak] FParent: TOMBElement;
     procedure Changed;
   public
     constructor Create; override;
+    procedure SetValues(const aLeft, aRight, aTop, aBottom : String);
     property Left : TOMBProperty read FLeft write SetLeft;
     property Top : TOMBProperty read FTop write SetTop;
     property Right : TOMBProperty read FRight write SetRight;
@@ -92,6 +87,14 @@ type
   end;
 
   TOMBFont = class(TOMBObject)
+  private const
+    str_Family    = 'family';
+    str_Size     = 'size';
+    str_Color   = 'color';
+    str_Bold  = 'bold';
+    str_Underline  = 'underline';
+    str_Italic  = 'italic';
+    str_StrikeOut  = 'strikeout';
   private
     FUnderline: Boolean;
     FColor: TAlphaColor;
@@ -107,17 +110,17 @@ type
     procedure SetSize(const Value: Single);
     procedure SetStrikeOut(const Value: Boolean);
     procedure SetUnderline(const Value: Boolean);
-  private const
-    str_Family    = 'family';
-    str_Size     = 'size';
-    str_Color   = 'color';
-    str_Bold  = 'bold';
-    str_Underline  = 'underline';
-    str_Italic  = 'italic';
-    str_StrikeOut  = 'strikeout';
     function GetJSON: ISuperObject; override;
     procedure SetJSON(const Value: ISuperObject); override;
+    procedure SaveToNode(aXMLNode :  IXMLNode); override;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
+    function IsNeedSave : Boolean; override;
+  protected
+    FFont : TFont;
+    function Font : TFont;
   public
+    constructor Create; override;
+    destructor Destroy; override;
     property Family : String read FFamily write SetFamily;
     property Size : Single read FSize write SetSize;
     property Color : TAlphaColor read FColor write SetColor;
@@ -132,73 +135,154 @@ type
 
   TOMBElement = class(TOMBObject)
   private const
-    str_Bounds = 'bounds';
+    str_Width   = 'width';
+    str_Height  = 'height';
     str_Margins = 'margins';
+    str_Padding = 'padding';
     str_DataName = 'dataname';
     str_Chilgs = 'childs';
+    str_Align = 'align';
+    str_Opacity = 'opacity';
+    str_Visible = 'visible';
+    str_BgColor = 'bcolor';
   private
     FAlign: TOMBElemetAlign;
     [weak] FCell: TOMBCell;
     [weak] FParent: TOMBElement;
     FMargins: TOMBMargins;
-    FBounds: TOMBBounds;
-    FValue: TValue;
-    FName: String;
     FVisible: Boolean;
+    FBodyColor: TAlphaColor;
+    FOpacity: Single;
+    FPadding: TOMBMargins;
+    FWidth: TOMBProperty;
+    FHeight: TOMBProperty;
     procedure InternalAlign;
     procedure CalcOriginPlace;
     procedure PaintDesignTime(Canvas : TCanvas);
     procedure SetAlign(const Value: TOMBElemetAlign);
-    procedure SetBounds(const Value: TOMBBounds);
     procedure SetCell(const Value: TOMBCell);
     procedure SetMargins(const Value: TOMBMargins);
     procedure SetParent(const Value: TOMBElement);
-    procedure SetValue(const Value: TValue);
-    procedure SetName(const Value: String);
     procedure SetVisible(const Value: Boolean);
+    procedure SetBodyColor(const Value: TAlphaColor);
+    procedure SetOpacity(const Value: Single);
+    procedure SetPadding(const Value: TOMBMargins);
+    procedure SetHeight(const Value: TOMBProperty);
+    procedure SetWidth(const Value: TOMBProperty);
   protected
-    CalcPlace, OwnerPlace, CalcMargins :  TRectF;
+    State: TCanvasSaveState;
+    CalcPlace, OwnerPlace, CalcMargins, CalcPadding :  TRectF;
     Childs : TOMBElementsList;
     procedure Resize(aBounds : TRectF); virtual;
     procedure Paint(Canvas : TCanvas);
     procedure InternalPaint(Canvas : TCanvas); virtual;
     function IsDesignMode : Boolean;
 
-    procedure BoundsChanged;
     procedure MarginsChanged;
     function GetJSON: ISuperObject; override;
     procedure SetJSON(const Value: ISuperObject); override;
     function FullHeight : Single;
     function FullWidth : Single;
+
+    function AbsoluteOpacity : Single;
+    function GetStructure: String; override;
+    procedure SetStructure(const Value: String); override;
+    procedure SaveToNode(aXMLNode :  IXMLNode); override;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
+
+    function GetData(const aKey : String; out aData : TValue) : Boolean;
+    procedure ApplyData;
+    procedure SetData(const Value : TValue); virtual;
+    function FindElement(const aName : String) : TOMBElement;
+    procedure SetPropertyValue(const SS : TArray<String>; const aValue : TValue);
   public
-    constructor Create; virtual;
+    constructor Create; override;
     destructor Destroy; override;
     property Cell :  TOMBCell read FCell write SetCell;
     property Parent : TOMBElement read FParent write SetParent;
     property Align : TOMBElemetAlign read FAlign write SetAlign;
-    property Bounds : TOMBBounds read FBounds write SetBounds;
+
+    property Width : TOMBProperty read FWidth write SetWidth;
+    property Height : TOMBProperty read FHeight write SetHeight;
+
     property Margins : TOMBMargins read FMargins write SetMargins;
-    property Value : TValue read FValue write SetValue;
-    property Name : String read FName write SetName;
+    property Padding : TOMBMargins read FPadding write SetPadding;
+
     property Visible : Boolean read FVisible write SetVisible;
+    property BodyColor : TAlphaColor read FBodyColor write SetBodyColor;
+    property Opacity : Single read FOpacity write SetOpacity;
   end;
 
   TOMBText = class(TOMBElement)
+  private const
+    str_Fornt = 'font';
+    str_Text = 'text';
   private
     FFont: TOMBFont;
+    FHorzAlign: TTextAlign;
+    FWordWrap: Boolean;
+    FVertAlign: TTextAlign;
+    FText: String;
     procedure SetFont(const Value: TOMBFont);
+    procedure SetHorzAlign(const Value: TTextAlign);
+    procedure SetVertAlign(const Value: TTextAlign);
+    procedure SetWordWrap(const Value: Boolean);
+    procedure SetText(const Value: String);
   protected
+    procedure InternalPaint(Canvas : TCanvas); override;
     function GetJSON: ISuperObject; override;
     procedure SetJSON(const Value: ISuperObject); override;
+    procedure SaveToNode(aXMLNode :  IXMLNode); override;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
+    procedure SetData(const Value : TValue); override;
   public
     constructor Create; override;
     destructor Destroy; override;
     property Font : TOMBFont read FFont write SetFont;
+    property WordWrap : Boolean read FWordWrap write SetWordWrap;
+    property VertAlign : TTextAlign read FVertAlign write SetVertAlign;
+    property HorzAlign : TTextAlign read FHorzAlign write SetHorzAlign;
+    property Text : String read FText write SetText;
   end;
 
   TOMBLayout = class(TOMBElement)
 
   end;
+
+  TOMBImage = class(TOMBElement)
+  private const
+    str_WrapMode = 'mode';
+  private
+    FImage: TBitmap;
+    FWrapMode: TImageWrapMode;
+    procedure SetImage(const Value: TBitmap); virtual;
+    procedure SetWrapMode(const Value: TImageWrapMode);
+  protected
+    procedure InternalPaint(Canvas : TCanvas); override;
+    procedure DrawBitmap(const Canvas: TCanvas; const ARect: TRectF; const ABitmap: TBitmap; const AOpacity: Single = 1.0);
+    procedure SaveToNode(aXMLNode :  IXMLNode); override;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
+    procedure SetData(const Value : TValue); override;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property Image : TBitmap read FImage write SetImage;
+    property WrapMode : TImageWrapMode read FWrapMode write SetWrapMode;
+  end;
+
+  TOMBStaticImage = class(TOMBImage)
+  private const
+    str_ImageBody = 'image';
+  private
+    procedure SetImage(const Value: TBitmap); override;
+  protected
+    procedure SaveToNode(aXMLNode :  IXMLNode); override;
+    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+  end;
+
 
   TOMBCell = class (TControl)
   private
@@ -206,14 +290,22 @@ type
     FCell: TOMBElement;
     procedure SetPlan(const Value: TStringList);
     procedure SetCell(const Value: TOMBElement);
+    function GetData(Index: String): TValue;
+    procedure SetData(Index: String; const Value: TValue);
 //    procedure PlanChanged(Sender : TObject);
   protected
+    FDataUpdateted : Boolean;
+    FData : TDictionary<String,TValue>;
     procedure Paint; override;
     procedure Resize; override;
+    procedure ApplyData;
+    function FindElement(const aName : String) :TOMBElement;
   public
+    tm_lastPaint, tm_LastResize : Int64;
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
     property Cell : TOMBElement read FCell write SetCell;
-  published
-//    property Plan : TStringList read FPlan write SetPlan;
+    property Data[Index : String] : TValue read GetData write SetData;
   published
     property Align;
     property Anchors;
@@ -269,7 +361,8 @@ procedure Register;
 implementation
 
 const
-  str_ClassName = 'omb_class';
+  str_ClassName = 'class';
+  str_Name = 'name';
 
 type
   TOMBClassCollection = class(TList<TOMBClass>)
@@ -277,6 +370,7 @@ type
 
 var
   LClassList : TOMBClassCollection;
+  OMBObjects  : TDictionary<String, TOMBObject>;
 
 procedure Register;
 begin
@@ -294,74 +388,27 @@ begin
   LClassList.Remove(aClass);
 end;
 
-{ TOMBBounds }
-
-procedure TOMBBounds.Changed;
+function FindClass(const aName : String) : TOMBClass;
+var
+  Cl : TOMBClass;
 begin
-
-end;
-
-constructor TOMBBounds.Create;
-begin
-  inherited;
-  FParent := nil;
-  FWidth.Str := '60 px';
-  FHeight.Str := '35px';
-  FLeft.Str := '0px';
-  FTop.Str := '0px';
-end;
-
-function TOMBBounds.GetJSON: ISuperObject;
-begin
-  Result := Inherited;
-  Result.S[str_Width]       := FWidth.Str;
-  Result.S[str_Height]      := FHeight.Str;
-  Result.S[str_Top]         := FTop.Str;
-  Result.S[str_Left]        := FLeft.Str;
-end;
-
-procedure TOMBBounds.SetHeight(const Value: TOMBProperty);
-begin
-  if FHeight.Str<>Value.Str then
+  Result := nil;
+  for Cl in LClassList do
   begin
-    FHeight := Value;
-    Changed;
+    if Cl.GetNodeName.Equals(aName) then
+    begin
+      Result := Cl;
+      Break;
+    end;
   end;
 end;
 
-procedure TOMBBounds.SetJSON(const Value: ISuperObject);
-begin
-  FWidth.Str  := Value.S[str_Width];
-  FHeight.Str := Value.S[str_Height];
-  FTop.Str    := Value.S[str_Top];
-  FLeft.Str   := Value.S[str_Left];
-end;
 
-procedure TOMBBounds.SetLeft(const Value: TOMBProperty);
+function GetAttr(Node : IXMLNode; const aName : String; Def : OleVariant) : OleVariant;
 begin
-  if FLeft.Str<>Value.Str then
-  begin
-    FLeft := Value;
-    Changed;
-  end;
-end;
-
-procedure TOMBBounds.SetTop(const Value: TOMBProperty);
-begin
-  if FTop.Str<>Value.Str then
-  begin
-    FTop := Value;
-    Changed;
-  end;
-end;
-
-procedure TOMBBounds.SetWidth(const Value: TOMBProperty);
-begin
-  if FWidth.Str<>Value.Str then
-  begin
-    FWidth := Value;
-    Changed;
-  end;
+  Result := Def;
+  if Node.HasAttribute(aName) then
+    Result := Node.Attributes[aName];
 end;
 
 { TOMBMargins }
@@ -383,11 +430,40 @@ end;
 
 function TOMBMargins.GetJSON: ISuperObject;
 begin
-  Result := Inherited;
-  Result.S[str_Right]       := FRight.Str;
-  Result.S[str_Bottom]      := FBottom.Str;
-  Result.S[str_Top]         := FTop.Str;
-  Result.S[str_Left]        := FLeft.Str;
+  Result := SO;
+  if FRight.Value<>0 then Result.S[str_Right]     := FRight.Str;
+  if FBottom.Value<>0 then Result.S[str_Bottom]   := FBottom.Str;
+  if FTop.Value<>0 then Result.S[str_Top]         := FTop.Str;
+  if FLeft.Value<>0 then Result.S[str_Left]       := FLeft.Str;
+end;
+
+function TOMBMargins.IsNeedSave: Boolean;
+begin
+  Result := (FRight.Value<>0) or (FBottom.Value<>0)
+    or (FTop.Value<>0) or (FBottom.Value<>0);
+end;
+
+procedure TOMBMargins.LoadFromNode(aXMLNode: IXMLNode);
+
+begin
+  inherited;
+  FTop := GetAttr(aXMLNode, str_Top, '0px');
+  FRight := GetAttr(aXMLNode, str_Right, '0px');
+  FBottom := GetAttr(aXMLNode, str_Bottom, '0px');
+  FLeft := GetAttr(aXMLNode, str_Left, '0px');
+end;
+
+procedure TOMBMargins.SaveToNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+  if FTop.Value<>0 then
+    aXMLNode.Attributes[str_Top] := FTop.Str;
+  if FBottom.Value<>0 then
+    aXMLNode.Attributes[str_Bottom] := FBottom.Str;
+  if FRight.Value<>0 then
+    aXMLNode.Attributes[str_Right] := FRight.Str;
+  if FLeft.Value<>0 then
+    aXMLNode.Attributes[str_Left] := FLeft.Str;
 end;
 
 procedure TOMBMargins.SetBottom(const Value: TOMBProperty);
@@ -434,15 +510,40 @@ begin
   end;
 end;
 
+procedure TOMBMargins.SetValues(const aLeft, aRight, aTop, aBottom: String);
+begin
+  FLeft := aLeft;
+  FTop := aTop;
+  FRight := aRight;
+  FBottom := aBottom;
+  Changed;
+end;
+
 { TOMBElement }
 
-procedure TOMBElement.BoundsChanged;
+function TOMBElement.AbsoluteOpacity: Single;
 begin
-  CalcOriginPlace;
-  InternalAlign;
+  Result := 1;
+  if Assigned(FCell) then
+    Result := FCell.AbsoluteOpacity * FOpacity else
+    if FParent<>nil then
+      Result := FParent.AbsoluteOpacity * FOpacity;
+end;
+
+procedure TOMBElement.ApplyData;
+var
+  Value : TValue;
+begin
+  if FName<>'' then
+  begin
+    if GetData(FName, Value) then
+      SetData(Value);
+  end;
 end;
 
 procedure TOMBElement.CalcOriginPlace;
+var
+  dX, dY : Single;
 begin
   CalcPlace := OwnerPlace;
   CalcMargins.Left := Margins.FLeft.Calc(CalcPlace.Width);
@@ -450,37 +551,51 @@ begin
   CalcMargins.Right := Margins.FRight.Calc(CalcPlace.Width);
   CalcMargins.Bottom := Margins.FBottom.Calc(CalcPlace.Height);
 
-  CalcPlace.Left := OwnerPlace.Left+CalcMargins.Left+Bounds.Left.Calc(OwnerPlace.Width);
-  CalcPlace.Top := OwnerPlace.Top+CalcMargins.Top+Bounds.Top.Calc(OwnerPlace.Height);
-  CalcPlace.Width := Bounds.Width.Calc(OwnerPlace.Width);
-  CalcPlace.Height := Bounds.Height.Calc(OwnerPlace.Height);
+  CalcPadding.Left := Padding.FLeft.Calc(CalcPlace.Width);
+  CalcPadding.Top := Padding.FTop.Calc(CalcPlace.Height);
+  CalcPadding.Right := Padding.FRight.Calc(CalcPlace.Width);
+  CalcPadding.Bottom := Padding.FBottom.Calc(CalcPlace.Height);
+
+  CalcPlace.Width := Width.Calc(OwnerPlace.Width);
+  CalcPlace.Height := Height.Calc(OwnerPlace.Height);
 
   case Align of
-    None: ;
-    Left: begin
-      CalcPlace.Left := CalcMargins.Left + OwnerPlace.Left;
+    TOMBElemetAlign.Left: begin
+      dX := - CalcPlace.Left + CalcMargins.Left;
+      dY := 0;
+      CalcPlace.Offset(dX, dY);
+      CalcPlace.Top := CalcMargins.Top;
       CalcPlace.Height := OwnerPlace.Height - CalcMargins.Top - CalcMargins.Bottom;
     end;
-    Right: begin
-      CalcPlace.Left := OwnerPlace.Right - CalcPlace.Width - CalcMargins.Right;
+    TOMBElemetAlign.Right: begin
+      dX := OwnerPlace.Right - CalcPlace.Left - CalcMargins.Right -  CalcPlace.Width;
+      dY := 0;
+      CalcPlace.Offset(dX, dY);
+      CalcPlace.Top := CalcMargins.Top;
       CalcPlace.Height := OwnerPlace.Height - CalcMargins.Top - CalcMargins.Bottom;
     end;
-    Top:
+    TOMBElemetAlign.Top:
     begin
-      CalcPlace.Top := OwnerPlace.Top + CalcMargins.Top;
+      dX := 0;
+      dY := -CalcPlace.Top+ CalcMargins.Top;
+      CalcPlace.Offset(dX, dY);
       CalcPlace.Width := OwnerPlace.Width - CalcMargins.Left - CalcMargins.Right;
+      CalcPlace.Left := OwnerPlace.Left + CalcMargins.Left;
     end;
-    Bottom:
+    TOMBElemetAlign.Bottom:
     begin
-      CalcPlace.Top := OwnerPlace.Bottom - CalcPlace.Width - CalcMargins.Bottom;
+      dX := 0;
+      dY := OwnerPlace.Bottom - CalcPlace.Top - CalcMargins.Bottom - CalcPlace.Height;
+      CalcPlace.Offset(dX, dY);
       CalcPlace.Width := OwnerPlace.Width - CalcMargins.Left - CalcMargins.Right;
+      CalcPlace.Left := OwnerPlace.Left + CalcMargins.Left;
     end;
-    Center:
+    TOMBElemetAlign.Center:
     begin
       CalcPlace.Left := OwnerPlace.Left + (OwnerPlace.Width - CalcPlace.Width) / 2;
       CalcPlace.Top := OwnerPlace.Top + (OwnerPlace.Height - CalcPlace.Height) / 2;
     end;
-    Client, Contents:
+    TOMBElemetAlign.Client, TOMBElemetAlign.Contents:
     begin
       CalcPlace.Left := OwnerPlace.Left + CalcMargins.Left;
       CalcPlace.Top := OwnerPlace.Top + CalcMargins.Top;
@@ -493,17 +608,19 @@ end;
 constructor TOMBElement.Create;
 begin
   inherited;
+  FWidth := '60 px';
+  FHeight := '35px';
+  FOpacity :=1;
+  FBodyColor := 0;
   FVisible := True;
-  FAlign := None;
+  FAlign := TOMBElemetAlign.Top;
   FCell := nil;
   FParent := nil;
   FMargins := TOMBMargins.Create;
   FMargins.FParent := Self;
-  FBounds := TOMBBounds.Create;
-  FBounds.FParent := Self;
+  FPadding := TOMBMargins.Create;
+  FPadding.FParent := Self;
   Childs := TOMBElementsList.Create(True);
-  FValue := TValue.Empty;
-  FName := '';
 end;
 
 destructor TOMBElement.Destroy;
@@ -511,9 +628,26 @@ begin
   FParent := nil;
   Childs.Clear;
   FreeAndNil(Childs);
-  FreeAndNil(FBounds);
   FreeAndNil(FMargins);
+  FreeAndNil(FPadding);
   inherited;
+end;
+
+function TOMBElement.FindElement(const aName: String): TOMBElement;
+var
+  MyElem: TOMBElement;
+begin
+  Result := nil;
+
+  if (FName<>'') and aName.Equals(FName) then
+    Result := Self else
+    for MyElem in Childs do
+    begin
+      Result := MyElem.FindElement(aName);
+      if Result<>nil then
+        Break;
+    end;
+
 end;
 
 function TOMBElement.FullHeight: Single;
@@ -526,20 +660,40 @@ begin
   Result := CalcMargins.Left + CalcPlace.Width + CalcMargins.Right;
 end;
 
+function TOMBElement.GetData(const aKey : String; out aData: TValue): Boolean;
+begin
+  Result := False;
+  if FCell<>nil then
+    Result := FCell.FData.TryGetValue(aKey, aData) else
+    if FParent<>nil then
+      Result := FParent.GetData(aKey, aData);
+end;
+
 function TOMBElement.GetJSON: ISuperObject;
 var
   Element : TOMBElement;
   Ar : ISuperArray;
+  Obj : ISuperObject;
 begin
   Result := inherited;
-  Result.O[str_Bounds] := FBounds.JSON;
-  Result.O[str_Margins] := FMargins.JSON;
-  Result.S[str_DataName] := FName;
-  Ar := Result.A['childs'];
+  Obj := FMargins.JSON;
+  if Obj.Count>0 then
+    Result.O[str_Margins] := Obj;
+  Obj := FPadding.JSON;
+  if Obj.Count>0 then
+    Result.O[str_Padding] := Obj;
+  Ar := SA;
   for Element in Childs do
   begin
     Ar.Add(Element.JSON);
   end;
+  if AR.Length>0 then
+    Result.A['childs'] := Ar;
+end;
+
+function TOMBElement.GetStructure: String;
+begin
+
 end;
 
 procedure TOMBElement.InternalAlign;
@@ -556,14 +710,13 @@ var
       begin
         Element.Resize(RC);
         case AAlignMode of
-          None: ;
-          Left: RC.Left := RC.Left + Element.FullWidth;
-          Right: RC.Right := RC.Right - Element.FullWidth;
-          Top: RC.Top := RC.Top + Element.FullHeight;
-          Bottom: RC.Bottom := RC.Bottom  - Element.FullHeight;
-          Center: ;
-          Client: ;
-          Contents: ;
+          TOMBElemetAlign.Left: RC.Left := RC.Left + Element.FullWidth;
+          TOMBElemetAlign.Right: RC.Right := RC.Right - Element.FullWidth;
+          TOMBElemetAlign.Top: RC.Top := RC.Top + Element.FullHeight;
+          TOMBElemetAlign.Bottom: RC.Bottom := RC.Bottom  - Element.FullHeight;
+          TOMBElemetAlign.Center: ;
+          TOMBElemetAlign.Client: ;
+          TOMBElemetAlign.Contents: ;
         end;
       end;
     end;
@@ -572,24 +725,85 @@ var
 begin
   CalcOriginPlace;
   RC:= CalcPlace;
-  reAlign(None);
-  reAlign(Contents);
-  reAlign(Top);
-  reAlign(Bottom);
-  reAlign(Left);
-  reAlign(Right);
-  reAlign(Center);
-  reAlign(Client);
+  RC.Left := RC.Left + CalcPadding.Left;
+  RC.Top := RC.Top + CalcPadding.Top;
+  RC.Right := RC.Right - CalcPadding.Right;
+  RC.Bottom := RC.Bottom - CalcPadding.Bottom;
+  reAlign(TOMBElemetAlign.Contents);
+  reAlign(TOMBElemetAlign.Top);
+  reAlign(TOMBElemetAlign.Bottom);
+  reAlign(TOMBElemetAlign.Left);
+  reAlign(TOMBElemetAlign.Right);
+  reAlign(TOMBElemetAlign.Center);
+  reAlign(TOMBElemetAlign.Client);
 end;
 
 procedure TOMBElement.InternalPaint(Canvas: TCanvas);
 begin
-
+  Canvas.Stroke.Color :=  FBodyColor;
+  Canvas.Stroke.Kind :=  TBrushKind.Solid;
+  Canvas.Fill.Color := FBodyColor;
+  Canvas.Fill.Kind := TBrushKind.Solid;
+  Canvas.FillRect(CalcPlace, 0,0, [], AbsoluteOpacity);
 end;
 
 function TOMBElement.IsDesignMode: Boolean;
 begin
   Result := True;
+  if FCell<>nil then
+    Result :=  csDesigning in  FCell.ComponentState else
+    if FParent<>nil then
+      Result := FParent.IsDesignMode;
+end;
+
+procedure TOMBElement.LoadFromNode(aXMLNode: IXMLNode);
+var
+  Ch : IXMLNode;
+  I: Integer;
+  Cl : TOMBClass;
+  Obj : TOMBElement;
+  S : String;
+begin
+  if aXMLNode=nil then
+    Exit;
+
+  S := GetAttr(aXMLNode, str_Align, 'Top');
+  FAlign := TOMBElemetAlign(GetEnumValue(PTypeInfo(TypeInfo(TOMBElemetAlign)), S));
+
+  FBodyColor := StrToInt('$'+GetAttr(aXMLNode, str_BgColor, '0'));
+
+  FVisible := GetAttr(aXMLNode, str_Visible, True);
+
+  FOpacity := GetAttr(aXMLNode, str_Opacity, 1);
+
+  FWidth := getAttr(aXMLNode, str_Width, '0 px');
+
+  FHeight := getAttr(aXMLNode, str_Height, '0 px');
+
+
+  for I := 0 to aXMLNode.ChildNodes.Count-1 do
+  begin
+    Ch := aXMLNode.ChildNodes.Nodes[I];
+    if Ch.NodeName=str_Margins then
+    begin
+      FMargins.LoadFromNode(Ch);
+      Continue
+    end;
+
+    if Ch.NodeName=str_Padding then
+    begin
+      FPadding.LoadFromNode(Ch);
+      Continue;
+    end;
+
+    Cl := FindClass(Ch.NodeName);
+    if (Cl<>nil) and (Cl.InheritsFrom(TOMBElement)) then
+    begin
+      Obj := Cl.Create as TOMBElement;
+      Obj.Parent := Self;
+      Obj.LoadFromNode(Ch);
+    end;
+  end;
 end;
 
 procedure TOMBElement.MarginsChanged;
@@ -601,12 +815,19 @@ procedure TOMBElement.Paint(Canvas: TCanvas);
 var
   Element: TOMBElement;
 begin
+  if FCell<>nil then
+    State := Canvas.SaveState;
+  try
   if IsDesignMode then
     PaintDesignTime(Canvas) else
     InternalPaint(Canvas);
   for Element in Childs do
   begin
     Element.Paint(Canvas);
+  end;
+  finally
+    if FCell<>nil then
+      Canvas.RestoreState(State);
   end;
 end;
 
@@ -616,27 +837,18 @@ const
 var
   R: TRectF;
   State: TCanvasSaveState;
-  FInPaintTo : Boolean;
 begin
-  FInPaintTo := False;
-  if not FInPaintTo then
-  begin
-    R := CalcPlace;
-    InflateRect(R, -0.5, -0.5);
-    State := Canvas.SaveState;
-    try
-      Canvas.Stroke.Kind := TBrushKind.Solid;
-      Canvas.Stroke.Dash := Dash[Visible];
-      Canvas.Stroke.Color := TAlphaColorRec.Black;
-      Canvas.Stroke.Thickness := 1;
-        Canvas.DrawRect(R, 0, 0, AllCorners, 0.3);
-      Canvas.Font.Size := 8;
-      Canvas.Fill.Color := TAlphaColorRec.Black;
-      Canvas.FillText(R, ClassName, False, 0.4, [], TTextAlign.Leading, TTextAlign.Leading);
-    finally
-      Canvas.RestoreState(State);
-    end;
-  end;
+  R := CalcPlace;
+  InflateRect(R, -0.5, -0.5);
+  Canvas.Stroke.Kind := TBrushKind.Solid;
+  Canvas.Stroke.Dash := Dash[Visible];
+  Canvas.Stroke.Color := TAlphaColorRec.Black;
+  Canvas.Fill.Kind := TBrushKind.None;
+  Canvas.Stroke.Thickness := 1;
+    Canvas.DrawRect(R, 0, 0, AllCorners, 0.3);
+    Canvas.Font.Size := 8;
+  Canvas.Fill.Color := TAlphaColorRec.Black;
+  Canvas.FillText(R, Name, False, 0.4, [], TTextAlign.Leading, TTextAlign.Leading);
 end;
 
 procedure TOMBElement.Resize(aBounds: TRectF);
@@ -645,14 +857,50 @@ begin
   InternalAlign;
 end;
 
+procedure TOMBElement.SaveToNode(aXMLNode: IXMLNode);
+var
+  Element : TOMBObject;
+begin
+  inherited;
+
+  if FMargins.IsNeedSave then
+    FMargins.SaveToNode(aXMLNode.AddChild(str_Margins));
+  if FPadding.IsNeedSave then
+    FPadding.SaveToNode(aXMLNode.AddChild(str_Padding));
+
+  if not FVisible then
+    aXMLNode.Attributes[str_Visible] := FVisible;
+
+  if FOpacity<1 then
+    aXMLNode.Attributes[str_Opacity] := FOpacity;
+
+  if FWidth.Value<>0 then
+    aXMLNode.Attributes[str_Width] := FWidth.Str;
+
+  if FHeight.Value<>0 then
+    aXMLNode.Attributes[str_Height] := FHeight.Str;
+
+  if FBodyColor<>0 then
+    aXMLNode.Attributes[str_BgColor] := IntToHex(FBodyColor, 8);
+
+  if FAlign<>TOMBElemetAlign.Top then
+    aXMLNode.Attributes[str_Align] := GetEnumName(PTypeInfo(TypeInfo(TOMBElemetAlign)), Ord(Align));
+
+
+  for Element in Childs do
+  begin
+    Element.SaveToNode(aXMLNode.AddChild(Element.GetNodeName));
+  end;
+end;
+
 procedure TOMBElement.SetAlign(const Value: TOMBElemetAlign);
 begin
   FAlign := Value;
 end;
 
-procedure TOMBElement.SetBounds(const Value: TOMBBounds);
+procedure TOMBElement.SetBodyColor(const Value: TAlphaColor);
 begin
-  FBounds := Value;
+  FBodyColor := Value;
 end;
 
 procedure TOMBElement.SetCell(const Value: TOMBCell);
@@ -660,9 +908,20 @@ begin
   FCell := Value;
 end;
 
+procedure TOMBElement.SetData(const Value: TValue);
+begin
+
+end;
+
+procedure TOMBElement.SetHeight(const Value: TOMBProperty);
+begin
+  FHeight := Value;
+end;
+
 procedure TOMBElement.SetJSON(const Value: ISuperObject);
 begin
 end;
+
 
 procedure TOMBElement.SetMargins(const Value: TOMBMargins);
 begin
@@ -670,13 +929,23 @@ begin
   InternalAlign;
 end;
 
-procedure TOMBElement.SetName(const Value: String);
+procedure TOMBElement.SetOpacity(const Value: Single);
 begin
-  FName := Value;
+  FOpacity := Value;
+end;
+
+procedure TOMBElement.SetPadding(const Value: TOMBMargins);
+begin
+  FPadding := Value;
 end;
 
 procedure TOMBElement.SetParent(const Value: TOMBElement);
 begin
+  if Value<>nil then
+    if not Value.InheritsFrom(TOMBElement) then
+       raise Exception.Create('Invalid object class ['+Value.ClassName+']');
+
+
   if FParent<>nil then
     FParent.Childs.Remove(self);
 
@@ -692,14 +961,25 @@ begin
   end;
 end;
 
-procedure TOMBElement.SetValue(const Value: TValue);
+procedure TOMBElement.SetPropertyValue(const SS: TArray<String>;
+  const aValue: TValue);
 begin
-  FValue := Value;
+end;
+
+procedure TOMBElement.SetStructure(const Value: String);
+begin
+  inherited;
+
 end;
 
 procedure TOMBElement.SetVisible(const Value: Boolean);
 begin
   FVisible := Value;
+end;
+
+procedure TOMBElement.SetWidth(const Value: TOMBProperty);
+begin
+  FWidth := Value;
 end;
 
 { TOMBCell }
@@ -712,13 +992,73 @@ begin
   
 end;
 
-procedure TOMBCell.Paint;
+procedure TOMBCell.ApplyData;
+var
+  aData : TPair<String,TValue>;
+  S, aName, aProperty : string;
+  Elm : TOMBElement;
+  Obj : TObject;
 begin
+  if FCell<>nil then
+  begin
+    for aData in FData do
+    begin
+      aProperty := aData.Key;
+      aName := GetToken(aProperty, '.');
+      Elm := FindElement(aName);
+      Obj := Elm;
+      if Elm<>nil then
+        FindProperty(Obj, aProperty, procedure(Instance: TObject; Prop: TRttiProperty)
+        begin
+          if Prop<>nil then
+            Prop.SetValue(Instance, aData.Value);
+        end);
+    end;
+  end;
+end;
+
+constructor TOMBCell.Create(AOwner: TComponent);
+begin
+  inherited;
+  FData := TDictionary<String,TValue>.Create;
+end;
+
+destructor TOMBCell.Destroy;
+begin
+  FreeAndNil(FData);
+  inherited;
+end;
+
+function TOMBCell.FindElement(const aName: String): TOMBElement;
+begin
+  if FCell<>nil then
+    Result := FCell.FindElement(aName);
+end;
+
+function TOMBCell.GetData(Index: String): TValue;
+begin
+
+end;
+
+procedure TOMBCell.Paint;
+var
+  SW : TStopwatch;
+begin
+  SW :=  TStopwatch.StartNew;
+  try
   inherited;
   if (csDesigning in ComponentState) and not Locked then
     DrawDesignBorder;
   if FCell<>nil then
+  begin
+    if FDataUpdateted then
+      ApplyData;
     FCell.Paint(Canvas);
+  end;
+  finally
+    SW.Stop;
+    tm_lastPaint := SW.ElapsedMilliseconds;
+  end;
 end;
 
 procedure TOMBCell.SetCell(const Value: TOMBElement);
@@ -729,9 +1069,20 @@ begin
   FCell := Value;
 
   if FCell<>nil then
+  begin
+    Opacity := 0;
+    FDataUpdateted := True;
     FCell.FCell := Self;
-  FCell.Resize(LocalRect);
+    FCell.Resize(LocalRect);
+    TAnimator.AnimateFloat(Self, 'Opacity', 1);
+  end;
   Repaint;
+end;
+
+procedure TOMBCell.SetData(Index: String; const Value: TValue);
+begin
+  FData.AddOrSetValue(Index, Value);
+  FDataUpdateted := True;
 end;
 
 procedure TOMBCell.SetPlan(const Value: TStringList);
@@ -743,28 +1094,155 @@ end;
 
 { TOMBPersistent }
 
+procedure TOMBObject.AssingName;
+var
+  S : String;
+  I : Integer;
+  C : Char;
+begin
+  for I := 1 to 1000 do
+  begin
+    S:= ClassName + I.ToString;
+    C := S.Chars[0];
+    if C in ['t', 'T'] then
+      S := S.Remove(0,1);
+
+    if not OMBObjects.ContainsKey(S) then
+    begin
+      Name := S;
+      Break;
+    end;
+  end;
+
+end;
+
 constructor TOMBObject.Create;
 begin
   inherited;
+  Name := '';
+//  AssingName;
+end;
 
+destructor TOMBObject.Destroy;
+begin
+
+  inherited;
 end;
 
 function TOMBObject.GetJSON: ISuperObject;
 begin
   Result := SO;
-  Result.S[str_ClassName] := ClassName;
+  Result.S[str_ClassName] := GetNodeName;
+  Result.S[str_Name] := Name;
+end;
+
+class function TOMBObject.GetNodeName: String;
+begin
+  Result := ClassName.ToLower;
+  if Result.Chars[0] = 't' then
+    Result := Result.Remove(0,1);
+  if Pos('omb', Result)=Low(Result) then
+    Result := Result.Remove(0,3);
+end;
+
+function TOMBObject.GetStructure: String;
+begin
+
+end;
+
+function TOMBObject.IsNeedSave: Boolean;
+begin
+  Result := True;
+end;
+
+class function TOMBObject.Load(Doc: IXMLDocument): TOMBObject;
+var
+  Cl : TOMBClass;
+  Node : IXMLNode;
+begin
+  Node := Doc.DocumentElement;
+  if Node<>nil then
+  begin
+    Cl := FindClass(Node.NodeName);
+    if Cl <> nil then
+    begin
+      Result := Cl.Create;
+      Result.LoadFromNode(Node);
+    end;
+  end;
+end;
+
+procedure TOMBObject.LoadFromNode(aXMLNode: IXMLNode);
+begin
+  Name := VarToStr(aXMLNode.Attributes[str_Name]);
+end;
+
+procedure TOMBObject.Save(Doc: IXMLDocument);
+begin
+  Doc.DocumentElement := Doc.CreateElement(GetNodeName, '');
+  SaveToNode(Doc.DocumentElement);
+end;
+
+procedure TOMBObject.SaveToNode(aXMLNode: IXMLNode);
+begin
+  if FName<>'' then
+    aXMLNode.Attributes[str_Name] := Name;
 end;
 
 procedure TOMBObject.SetJSON(const Value: ISuperObject);
+begin
+  FName := Value.S[str_Name];
+end;
+
+procedure TOMBObject.SetName(const Value: String);
+begin
+  if FName<>Value then
+  begin
+    FName := Value;
+  end;
+end;
+
+procedure TOMBObject.SetStructure(const Value: String);
 begin
 
 end;
 
 { TOMBFont }
 
+constructor TOMBFont.Create;
+begin
+  inherited;
+  FSize := 12;
+  FFamily := 'Robot';
+  FColor := TAlphaColorRec.Black;
+  FItalic := False;
+  FStrikeOut := False;
+  FBold := False;
+  FUnderline := False;
+  FFont := TFont.Create;
+end;
+
+destructor TOMBFont.Destroy;
+begin
+  FreeAndNil(FFont);
+  inherited;
+end;
+
+function TOMBFont.Font: TFont;
+begin
+  FFont.Family := Family;
+  FFont.Size := Size;
+  FFont.Style := [];
+  if FUnderline then FFont.Style := FFont.Style + [TFontStyle.fsUnderline];
+  if FItalic then FFont.Style := FFont.Style + [TFontStyle.fsItalic];
+  if FStrikeOut then FFont.Style := FFont.Style + [TFontStyle.fsStrikeOut];
+  if FBold then FFont.Style := FFont.Style + [TFontStyle.fsBold];
+  Result := FFont;
+end;
+
 function TOMBFont.GetJSON: ISuperObject;
 begin
-  Result := inherited;
+  Result := SO;
   Result.S[str_Family] := FFamily;
   Result.F[str_Size] := FSize;
   Result.I[str_Color] := FColor;
@@ -772,6 +1250,45 @@ begin
   Result.B[str_Underline] := FUnderline;
   Result.B[str_Italic] := FItalic;
   Result.B[str_StrikeOut] := FStrikeOut;
+end;
+
+function TOMBFont.IsNeedSave: Boolean;
+begin
+  Result := (FFamily<>'Robot') or (FSize<>12) or
+    (FColor <> TAlphaColorRec.Black) or FUnderline or FBold or FItalic or
+    FStrikeOut;
+end;
+
+procedure TOMBFont.LoadFromNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+  FFamily := GetAttr(aXMLNode, str_Family, 'Roboto');
+  FSize := GetAttr(aXMLNode, str_Size, 12);
+  FColor := StrToInt('$'+GetAttr(aXMLNode, str_Color, '$FF000000'));
+  FItalic := GetAttr(aXMLNode, str_Italic, False);
+  FUnderline := GetAttr(aXMLNode, str_Underline, False);
+  FBold := GetAttr(aXMLNode, str_Bold, False);
+  FStrikeOut := GetAttr(aXMLNode, str_StrikeOut, False);
+end;
+
+procedure TOMBFont.SaveToNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+  if FFamily<>'Robot' then
+    aXMLNode.Attributes[str_Family] := FFamily;
+  if FSize<>12 then
+    aXMLNode.Attributes[str_Size] := FSize;
+  if FColor<>TAlphaColorRec.Black then
+    aXMLNode.Attributes[str_Color] := IntToHex(FColor, 8);
+
+  if FUnderline then
+    aXMLNode.Attributes[str_Underline] := FUnderline;
+  if FBold then
+    aXMLNode.Attributes[str_Bold] := FBold;
+  if FStrikeOut then
+    aXMLNode.Attributes[str_StrikeOut] := FStrikeOut;
+  if FItalic then
+    aXMLNode.Attributes[str_Italic] := FItalic;
 end;
 
 procedure TOMBFont.SetBold(const Value: Boolean);
@@ -820,6 +1337,9 @@ constructor TOMBText.Create;
 begin
   inherited;
   FFont := TOMBFont.Create;
+  FWordWrap := True;
+  FHorzAlign := TTextAlign.Leading;
+  FVertAlign := TTextAlign.Leading;
 end;
 
 destructor TOMBText.Destroy;
@@ -834,15 +1354,69 @@ begin
   Result.O['font'] := FFont.JSON;
 end;
 
+procedure TOMBText.InternalPaint(Canvas: TCanvas);
+begin
+  inherited;
+  Canvas.Font.Assign(FFont.Font);
+  Canvas.Fill.Color := FFont.Color;
+  Canvas.Fill.Kind := TBrushKind.Solid;
+  Canvas.FillText(CalcPlace, FText, FWordWrap, AbsoluteOpacity, [], FHorzAlign, FVertAlign);
+end;
+
+procedure TOMBText.LoadFromNode(aXMLNode: IXMLNode);
+var
+  FontNode : IXMLNode;
+begin
+  inherited;
+  FText := GetAttr(aXMLNode, str_Text, '');
+  FontNode := aXMLNode.ChildNodes.FindNode(str_Fornt);
+  if FontNode<>nil then
+    Font.LoadFromNode(FontNode);
+end;
+
+procedure TOMBText.SaveToNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+  if FFont.IsNeedSave then
+    FFont.SaveToNode(aXMLNode.AddChild(str_Fornt));
+  if FText<>'' then
+    aXMLNode.Attributes[str_Text] := FText;
+end;
+
+procedure TOMBText.SetData(const Value: TValue);
+begin
+  Text := Value.AsString;
+end;
+
 procedure TOMBText.SetFont(const Value: TOMBFont);
 begin
   FFont := Value;
+end;
+
+procedure TOMBText.SetHorzAlign(const Value: TTextAlign);
+begin
+  FHorzAlign := Value;
 end;
 
 procedure TOMBText.SetJSON(const Value: ISuperObject);
 begin
   inherited;
 
+end;
+
+procedure TOMBText.SetText(const Value: String);
+begin
+  FText := Value;
+end;
+
+procedure TOMBText.SetVertAlign(const Value: TTextAlign);
+begin
+  FVertAlign := Value;
+end;
+
+procedure TOMBText.SetWordWrap(const Value: Boolean);
+begin
+  FWordWrap := Value;
 end;
 
 { TOMBPropertyHelper }
@@ -867,13 +1441,15 @@ var
 begin
   S1 := Str.ToLower;
   S2 := '';
-  I := Pos('%', S1);
+  I := S1.IndexOf('%');
+//  I := Pos('%', S1);
   if I<Low(S1) then
-    I := Pos('px', S1);
+    I := S1.IndexOf('px');
+//    I := Pos('px', S1);
   if I>=Low(S1) then
   begin
-    S2 := Copy(Str, I, Length(Str));
-    S1 := Copy(Str, Low(Str),I-1);
+    S2 := S1.Substring(I, S1.Length);
+    S1 := S1.Substring(0,I);
   end;
 end;
 
@@ -892,14 +1468,175 @@ begin
   Result.Str := Value;
 end;
 
+{ TOMBImage }
+
+constructor TOMBImage.Create;
+begin
+  inherited;
+  FImage := nil;
+  FWrapMode := TImageWrapMode.Original;
+end;
+
+destructor TOMBImage.Destroy;
+begin
+  inherited;
+end;
+
+procedure TOMBImage.DrawBitmap(const Canvas: TCanvas; const ARect: TRectF;
+  const ABitmap: TBitmap; const AOpacity: Single);
+var
+  LR, R, IntersectionRect: TRectF;
+  I, J: Integer;
+  FScreenScale : Single;
+begin
+  FScreenScale := 1.0;
+  LR := TRectF.Create(ARect.Left * FScreenScale, ARect.Top * FScreenScale, ARect.Right * FScreenScale,
+    ARect.Bottom * FScreenScale);
+
+
+    case FWrapMode of
+      TImageWrapMode.Original:
+        begin
+          R := TRectF.Create(ARect.Left, ARect.Top, ARect.Left + ABitmap.Width, ARect.Top + ABitmap.Height);
+          IntersectRect(IntersectionRect, LR, R);
+          Canvas.DrawBitmap(ABitmap, TRectF.Create(0, 0, IntersectionRect.Width, IntersectionRect.Height),
+            TRectF.Create(R.Left, R.Top, R.Left + IntersectionRect.Width / FScreenScale, R.Top + IntersectionRect.Height / FScreenScale),
+              AOpacity, False)
+        end;
+      TImageWrapMode.Fit:
+        begin
+          R := TRectF.Create(0, 0, ABitmap.Width / ABitmap.BitmapScale, ABitmap.Height / ABitmap.BitmapScale);
+          R := R.FitInto(ARect).SnapToPixel(Canvas.Scale, False);
+          Canvas.DrawBitmap(ABitmap, TRectF.Create(0, 0, ABitmap.Width, ABitmap.Height), R, AOpacity, False);
+        end;
+      TImageWrapMode.Stretch:
+        begin
+          Canvas.DrawBitmap(ABitmap, TRectF.Create(0, 0, ABitmap.Width, ABitmap.Height), ARect, AOpacity, False)
+        end;
+      TImageWrapMode.Tile:
+        begin
+          for I := 0 to Trunc(LR.Width / ABitmap.Width) + 1 do
+            for J := 0 to Trunc(LR.Height / ABitmap.Height) + 1 do
+            begin
+              R := TRectF.Create(0, 0, ABitmap.Width, ABitmap.Height);
+              OffsetRect(R, I * ABitmap.Width, J * ABitmap.Height);
+              IntersectRect(IntersectionRect, LR, R);
+              Canvas.DrawBitmap(ABitmap, TRectF.Create(0, 0, IntersectionRect.Width, IntersectionRect.Height),
+                TRectF.Create(R.Left / FScreenScale, R.Top / FScreenScale, (R.Left + IntersectionRect.Width) / FScreenScale,
+                  (R.Top + IntersectionRect.Height) / FScreenScale), AOpacity, True)
+            end;
+        end;
+      TImageWrapMode.Center:
+        begin
+          R := TRectF.Create(0, 0, ABitmap.Width / ABitmap.BitmapScale, ABitmap.Height / ABitmap.BitmapScale);
+          R := R.CenterAt(ARect).SnapToPixel(Canvas.Scale, False);
+          Canvas.DrawBitmap(ABitmap, TRectF.Create(0, 0, ABitmap.Width, ABitmap.Height), R, AOpacity, False);
+        end;
+      TImageWrapMode.Place:
+        begin
+          R := TRectF.Create(0, 0, ABitmap.Width / ABitmap.BitmapScale, ABitmap.Height / ABitmap.BitmapScale);
+          R := R.PlaceInto(ARect).SnapToPixel(Canvas.Scale, False);
+          Canvas.DrawBitmap(ABitmap, TRectF.Create(0, 0, ABitmap.Width, ABitmap.Height), R, AOpacity, False);
+        end;
+    end;
+end;
+
+procedure TOMBImage.InternalPaint(Canvas: TCanvas);
+var
+  R, R1 : TRectF;
+begin
+  inherited;
+  if (FImage<>nil) and (not FImage.IsEmpty) then
+  begin
+    DrawBitmap(Canvas, CalcPlace, FImage, AbsoluteOpacity);
+  end;
+end;
+
+procedure TOMBImage.LoadFromNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+
+end;
+
+procedure TOMBImage.SaveToNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+  if FWrapMode<>TImageWrapMode.Original then
+    aXMLNode.Attributes[str_WrapMode] := GetEnumName(PTypeInfo(TypeInfo(TImageWrapMode)), Ord(WrapMode));
+end;
+
+procedure TOMBImage.SetData(const Value: TValue);
+begin
+  Image := Value.AsObject as TBitmap;
+end;
+
+procedure TOMBImage.SetImage(const Value: TBitmap);
+begin
+  FImage := Value;
+end;
+
+procedure TOMBImage.SetWrapMode(const Value: TImageWrapMode);
+begin
+  FWrapMode := Value;
+end;
+
+{ TOMBStaticImage }
+
+constructor TOMBStaticImage.Create;
+begin
+  inherited;
+  FImage := TBitmap.Create;
+end;
+
+destructor TOMBStaticImage.Destroy;
+begin
+  FreeAndNil(FImage);
+  inherited;
+end;
+
+procedure TOMBStaticImage.LoadFromNode(aXMLNode: IXMLNode);
+begin
+  inherited;
+
+end;
+
+procedure TOMBStaticImage.SaveToNode(aXMLNode: IXMLNode);
+var
+  Bt : TBytesStream;
+  Node : IXMLNode;
+  Enc : TBase64Encoding;
+  S : String;
+begin
+  inherited;
+  Enc := TBase64Encoding.Create(80);
+  Bt := TBytesStream.Create;
+  try
+    Image.SaveToStream(Bt);
+    Node := aXMLNode.OwnerDocument.CreateNode(str_ImageBody, ntCData);
+    S :=  Enc.EncodeBytesToString(Bt.Bytes, Bt.Size);
+    Node.NodeValue := S;
+    aXMLNode.ChildNodes.Add(Node);
+  finally
+    FreeAndNil(Bt);
+    FreeAndNil(Enc);
+  end;
+end;
+
+procedure TOMBStaticImage.SetImage(const Value: TBitmap);
+begin
+  FImage.Assign(Value);
+end;
+
 initialization
   LClassList := TOMBClassCollection.Create;
-  RegisterOMBClass(TOMBBounds);
+  OMBObjects := TDictionary<String,TOMBObject>.Create;
   RegisterOMBClass(TOMBMargins);
   RegisterOMBClass(TOMBFont);
   RegisterOMBClass(TOMBElement);
   RegisterOMBClass(TOMBText);
   RegisterOMBClass(TOMBLayout);
+  RegisterOMBClass(TOMBImage);
 finalization
   FreeAndNil(LClassList);
+  FreeAndNil(OMBObjects);
 end.

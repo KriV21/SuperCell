@@ -37,7 +37,7 @@ requires
 
 contains
   OMB.Cells in 'OMB.Cells.pas',
-  XSuperJSON in '..\SuperObjext\XSuperJSON.pas',
-  XSuperObject in '..\SuperObjext\XSuperObject.pas';
+  XSuperJSON in '..\SuperObject\XSuperJSON.pas',
+  XSuperObject in '..\SuperObject\XSuperObject.pas';
 
 end.
