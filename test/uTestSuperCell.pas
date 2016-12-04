@@ -6,7 +6,8 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.ScrollBox,
   FMX.Memo, FMX.Controls.Presentation, FMX.StdCtrls, OMB.Cells, FMX.Layouts,
-  FMX.Objects, System.ImageList, FMX.ImgList, Xml.XMLDoc, Xml.XMLIntf, Xml.xmldom;
+  FMX.Objects, System.ImageList, FMX.ImgList, Xml.XMLDoc, Xml.XMLIntf, Xml.xmldom,
+  OMB.Cells.EditorFrame, FMX.TabControl;
 
 type
   TForm1 = class(TForm)
@@ -19,8 +20,14 @@ type
     ImageList1: TImageList;
     Image1: TImage;
     Timer1: TTimer;
+    Memo3: TMemo;
+    TabControl1: TTabControl;
+    TabItem1: TTabItem;
+    TabItem2: TTabItem;
+    OMBEditor1: TOMBEditor;
     procedure Button1Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -35,14 +42,12 @@ implementation
 
 {$R *.fmx}
 
-uses XSuperObject;
-
 procedure TForm1.Button1Click(Sender: TObject);
 var
   LaAll, LaBody, LaClient, laLEft, laRight : TOMBLayout;
   txt1, txt2 : TOMBText;
   Img : TOMBImage;
-  Img2 : TOMBStaticImage;
+  Img2 : TOMBImage;
   Dom : IXMLDocument;
 begin
   LaBody :=  TOMBLayout.Create;
@@ -87,7 +92,7 @@ begin
   Img.Height := '120';
   Img.Align := TOMBElemetAlign.Top;
   Img.WrapMode := TImageWrapMode.Fit;
-  Img.Image := ImageList1.Source.Items[0].MultiResBitmap.Bitmaps[1];
+  Img.Name := 'Logo';
   Img.Parent := laLEft;
 
   laRight := TOMBLayout.Create;
@@ -95,11 +100,11 @@ begin
   laRight.Width := '105';
   laRight.Parent := LaAll;
 
-  Img2 := TOMBStaticImage.Create;
+  Img2 := TOMBImage.Create;
   Img2.Parent := laRight;
   Img2.Align := TOMBElemetAlign.Bottom;
   Img2.WrapMode := TImageWrapMode.Place;
-  Img2.Image := ImageList1.Source.Items[1].MultiResBitmap.Bitmaps[1];
+  Img2.Name := 'Menu';
 
   Dom := NewXMLDocument;
 
@@ -107,12 +112,23 @@ begin
   Memo1.Text := FormatXMLData(Dom.XML.Text);
   OMBCell1.Data['comment.Text'] := 'Это просто праздник.';
   OMBCell1.Data['comment.BodyColor'] := $FF808080;
+  OMBCell1.Data['Menu.Image'] := ImageList1.Source.Items[1].MultiResBitmap.Bitmaps[1];
+  OMBCell1.Data['Logo.Image'] := ImageList1.Source.Items[0].MultiResBitmap.Bitmaps[1];
+//  OMBCell1.Cell := LaAll;
   OMBCell1.Cell := TOMBElement.Load(Dom) as TOMBElement;
+  Dom := NewXMLDocument;
+  OMBCell1.Cell.Save(Dom);
+  Memo3.Text := FormatXMLData(Dom.XML.Text);
 end;
 
 procedure TForm1.CreateItem;
 begin
 
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  OMBEditor1.Load(Memo1.Text);
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);

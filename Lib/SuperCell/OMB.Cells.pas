@@ -4,8 +4,8 @@ interface
 
 uses Sysutils, Classes, FMX.Controls, FMX.Graphics, FMX.Types, System.TypInfo,
   System.Generics.Collections, System.Types, System.Rtti, Variants, System.NetEncoding,
-  System.UITypes, XSuperObject,Xml.XMLDoc, Xml.XMLIntf, Xml.xmldom, FMX.Objects,
-  System.Diagnostics, FMX.ani, FMX.Utils;
+  System.UITypes, Xml.XMLDoc, Xml.XMLIntf, Xml.xmldom, FMX.Objects,
+  System.Diagnostics, FMX.ani, FMX.Utils, FMX.ImgList;
 
 type
   TOMBElemetAlign = (Left, Right, Top, Bottom, Center, Client, Contents);
@@ -29,8 +29,6 @@ type
   TOMBObject = class
   private
     FName: String;
-    function GetJSON: ISuperObject; virtual;
-    procedure SetJSON(const Value: ISuperObject); virtual;
     procedure SetName(const Value: String);
 
     procedure AssingName;
@@ -46,9 +44,9 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
     procedure Save(Doc : IXMLDocument);
-    class function Load(Doc : IXMLDocument) : TOMBObject;
+    class function Load(Doc : IXMLDocument) : TOMBObject; overload;
+    class function Load(Doc : String) : TOMBObject; overload;
     property Structure: String read GetStructure write SetStructure;
-    property JSON : ISuperObject read GetJSON write SetJSON;
     property Name : String read FName write SetName;
   end;
 
@@ -69,8 +67,6 @@ type
     str_Top     = 'top';
     str_Right   = 'right';
     str_Bottom  = 'bottom';
-    function GetJSON: ISuperObject; override;
-    procedure SetJSON(const Value: ISuperObject); override;
     procedure SaveToNode(aXMLNode :  IXMLNode); override;
     procedure LoadFromNode(aXMLNode :  IXMLNode); override;
     function IsNeedSave : Boolean; override;
@@ -110,8 +106,6 @@ type
     procedure SetSize(const Value: Single);
     procedure SetStrikeOut(const Value: Boolean);
     procedure SetUnderline(const Value: Boolean);
-    function GetJSON: ISuperObject; override;
-    procedure SetJSON(const Value: ISuperObject); override;
     procedure SaveToNode(aXMLNode :  IXMLNode); override;
     procedure LoadFromNode(aXMLNode :  IXMLNode); override;
     function IsNeedSave : Boolean; override;
@@ -156,9 +150,13 @@ type
     FPadding: TOMBMargins;
     FWidth: TOMBProperty;
     FHeight: TOMBProperty;
+
     procedure InternalAlign;
     procedure CalcOriginPlace;
     procedure PaintDesignTime(Canvas : TCanvas);
+    procedure PaintEditTime(Canvas : TCanvas);
+    procedure PaintEditSelectedTime(Canvas : TCanvas);
+
     procedure SetAlign(const Value: TOMBElemetAlign);
     procedure SetCell(const Value: TOMBCell);
     procedure SetMargins(const Value: TOMBMargins);
@@ -177,10 +175,10 @@ type
     procedure Paint(Canvas : TCanvas);
     procedure InternalPaint(Canvas : TCanvas); virtual;
     function IsDesignMode : Boolean;
+    function IsEditMode : Boolean;
+    function IsSelected : Boolean;
 
     procedure MarginsChanged;
-    function GetJSON: ISuperObject; override;
-    procedure SetJSON(const Value: ISuperObject); override;
     function FullHeight : Single;
     function FullWidth : Single;
 
@@ -195,6 +193,8 @@ type
     procedure SetData(const Value : TValue); virtual;
     function FindElement(const aName : String) : TOMBElement;
     procedure SetPropertyValue(const SS : TArray<String>; const aValue : TValue);
+    function ActiveCell : TOMBCell;
+    function FindElementAt(X, Y : Single) : TOMBElement;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -230,8 +230,6 @@ type
     procedure SetText(const Value: String);
   protected
     procedure InternalPaint(Canvas : TCanvas); override;
-    function GetJSON: ISuperObject; override;
-    procedure SetJSON(const Value: ISuperObject); override;
     procedure SaveToNode(aXMLNode :  IXMLNode); override;
     procedure LoadFromNode(aXMLNode :  IXMLNode); override;
     procedure SetData(const Value : TValue); override;
@@ -270,28 +268,22 @@ type
     property WrapMode : TImageWrapMode read FWrapMode write SetWrapMode;
   end;
 
-  TOMBStaticImage = class(TOMBImage)
-  private const
-    str_ImageBody = 'image';
-  private
-    procedure SetImage(const Value: TBitmap); override;
-  protected
-    procedure SaveToNode(aXMLNode :  IXMLNode); override;
-    procedure LoadFromNode(aXMLNode :  IXMLNode); override;
-  public
-    constructor Create; override;
-    destructor Destroy; override;
-  end;
-
-
   TOMBCell = class (TControl)
   private
     FPlan: TStringList;
     FCell: TOMBElement;
+    FImages: TImageList;
+    FEditMode: Boolean;
+    FSelected: TOMBElement;
+    FOnChangeSelected: TNotifyEvent;
     procedure SetPlan(const Value: TStringList);
     procedure SetCell(const Value: TOMBElement);
     function GetData(Index: String): TValue;
     procedure SetData(Index: String; const Value: TValue);
+    procedure SetImages(const Value: TImageList);
+    procedure SetEditMode(const Value: Boolean);
+    procedure SetSelected(const Value: TOMBElement);
+    procedure SetOnChangeSelected(const Value: TNotifyEvent);
 //    procedure PlanChanged(Sender : TObject);
   protected
     FDataUpdateted : Boolean;
@@ -300,13 +292,23 @@ type
     procedure Resize; override;
     procedure ApplyData;
     function FindElement(const aName : String) :TOMBElement;
+    function FindElementAt(X, Y : Single) : TOMBElement;
+    procedure MouseClick(Button: TMouseButton; Shift: TShiftState;
+      X, Y: Single); override;
+    procedure ChangeSelected;
   public
     tm_lastPaint, tm_LastResize : Int64;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     property Cell : TOMBElement read FCell write SetCell;
     property Data[Index : String] : TValue read GetData write SetData;
+    procedure Load(const Scheme : String);
+
+    property EditMode : Boolean read FEditMode write SetEditMode;
+    property Selected: TOMBElement read FSelected write SetSelected;
+    property OnChangeSelected : TNotifyEvent read FOnChangeSelected write SetOnChangeSelected;
   published
+    property Images : TImageList read FImages write SetImages;
     property Align;
     property Anchors;
     property ClipChildren;
@@ -428,15 +430,6 @@ begin
   FLeft.Str := '0px';
 end;
 
-function TOMBMargins.GetJSON: ISuperObject;
-begin
-  Result := SO;
-  if FRight.Value<>0 then Result.S[str_Right]     := FRight.Str;
-  if FBottom.Value<>0 then Result.S[str_Bottom]   := FBottom.Str;
-  if FTop.Value<>0 then Result.S[str_Top]         := FTop.Str;
-  if FLeft.Value<>0 then Result.S[str_Left]       := FLeft.Str;
-end;
-
 function TOMBMargins.IsNeedSave: Boolean;
 begin
   Result := (FRight.Value<>0) or (FBottom.Value<>0)
@@ -473,14 +466,6 @@ begin
     FBottom := Value;
     Changed;
   end;
-end;
-
-procedure TOMBMargins.SetJSON(const Value: ISuperObject);
-begin
-  FRight.Str  := Value.S[str_Right];
-  FBottom.Str := Value.S[str_Bottom];
-  FTop.Str    := Value.S[str_Top];
-  FLeft.Str   := Value.S[str_Left];
 end;
 
 procedure TOMBMargins.SetLeft(const Value: TOMBProperty);
@@ -528,6 +513,14 @@ begin
     Result := FCell.AbsoluteOpacity * FOpacity else
     if FParent<>nil then
       Result := FParent.AbsoluteOpacity * FOpacity;
+end;
+
+function TOMBElement.ActiveCell: TOMBCell;
+begin
+  Result := FCell;
+  if (Result=nil) and (FParent<>nil) then
+    Result := FParent.ActiveCell;
+
 end;
 
 procedure TOMBElement.ApplyData;
@@ -650,6 +643,26 @@ begin
 
 end;
 
+function TOMBElement.FindElementAt(X, Y: Single): TOMBElement;
+var
+  MyElem, Find: TOMBElement;
+begin
+  Result := nil;
+  if  CalcPlace.Contains(TPointF.Create(X,Y)) then
+  begin
+    Find := nil;
+    for MyElem in Childs do
+    begin
+      Find := MyElem.FindElementAt(X,Y);
+      if Find<>nil then
+        break;
+    end;
+    if Find=nil then
+      Find := Self;
+    Result := Find;
+  end;
+end;
+
 function TOMBElement.FullHeight: Single;
 begin
   Result := CalcMargins.Top + CalcPlace.Height + CalcMargins.Bottom;
@@ -667,28 +680,6 @@ begin
     Result := FCell.FData.TryGetValue(aKey, aData) else
     if FParent<>nil then
       Result := FParent.GetData(aKey, aData);
-end;
-
-function TOMBElement.GetJSON: ISuperObject;
-var
-  Element : TOMBElement;
-  Ar : ISuperArray;
-  Obj : ISuperObject;
-begin
-  Result := inherited;
-  Obj := FMargins.JSON;
-  if Obj.Count>0 then
-    Result.O[str_Margins] := Obj;
-  Obj := FPadding.JSON;
-  if Obj.Count>0 then
-    Result.O[str_Padding] := Obj;
-  Ar := SA;
-  for Element in Childs do
-  begin
-    Ar.Add(Element.JSON);
-  end;
-  if AR.Length>0 then
-    Result.A['childs'] := Ar;
 end;
 
 function TOMBElement.GetStructure: String;
@@ -750,10 +741,20 @@ end;
 function TOMBElement.IsDesignMode: Boolean;
 begin
   Result := True;
-  if FCell<>nil then
-    Result :=  csDesigning in  FCell.ComponentState else
-    if FParent<>nil then
-      Result := FParent.IsDesignMode;
+  if ActiveCell<>nil then
+    Result :=  csDesigning in ActiveCell.ComponentState;
+end;
+
+function TOMBElement.IsEditMode: Boolean;
+begin
+  Result := True;
+  if ActiveCell<>nil then
+    Result :=  ActiveCell.EditMode;
+end;
+
+function TOMBElement.IsSelected: Boolean;
+begin
+  Result := ActiveCell.Selected = self;
 end;
 
 procedure TOMBElement.LoadFromNode(aXMLNode: IXMLNode);
@@ -764,6 +765,7 @@ var
   Obj : TOMBElement;
   S : String;
 begin
+  Inherited;
   if aXMLNode=nil then
     Exit;
 
@@ -818,13 +820,24 @@ begin
   if FCell<>nil then
     State := Canvas.SaveState;
   try
+  InternalPaint(Canvas);
+
   if IsDesignMode then
-    PaintDesignTime(Canvas) else
-    InternalPaint(Canvas);
+    PaintDesignTime(Canvas);
+
   for Element in Childs do
   begin
     Element.Paint(Canvas);
   end;
+
+  if IsEditMode then
+  begin
+    if IsSelected then
+      PaintEditSelectedTime(Canvas) else
+      PaintEditTime(Canvas);
+  end;
+
+
   finally
     if FCell<>nil then
       Canvas.RestoreState(State);
@@ -847,8 +860,42 @@ begin
   Canvas.Stroke.Thickness := 1;
     Canvas.DrawRect(R, 0, 0, AllCorners, 0.3);
     Canvas.Font.Size := 8;
-  Canvas.Fill.Color := TAlphaColorRec.Black;
-  Canvas.FillText(R, Name, False, 0.4, [], TTextAlign.Leading, TTextAlign.Leading);
+end;
+
+procedure TOMBElement.PaintEditSelectedTime(Canvas: TCanvas);
+const
+  Dash: array [Boolean] of TStrokeDash = (TStrokeDash.Dot, TStrokeDash.Dash);
+var
+  R: TRectF;
+  State: TCanvasSaveState;
+begin
+  R := CalcPlace;
+  InflateRect(R, -0.5, -0.5);
+  Canvas.Stroke.Kind := TBrushKind.Solid;
+  Canvas.Stroke.Dash := Dash[Visible];
+  Canvas.Stroke.Color := TAlphaColorRec.Black;
+  Canvas.Fill.Kind := TBrushKind.None;
+  Canvas.Stroke.Thickness := 3;
+    Canvas.DrawRect(R, 0, 0, AllCorners, 0.7);
+    Canvas.Font.Size := 8;
+end;
+
+procedure TOMBElement.PaintEditTime(Canvas: TCanvas);
+const
+  Dash: array [Boolean] of TStrokeDash = (TStrokeDash.Dot, TStrokeDash.Dash);
+var
+  R: TRectF;
+  State: TCanvasSaveState;
+begin
+  R := CalcPlace;
+  InflateRect(R, -0.5, -0.5);
+  Canvas.Stroke.Kind := TBrushKind.Solid;
+  Canvas.Stroke.Dash := Dash[Visible];
+  Canvas.Stroke.Color := TAlphaColorRec.Black;
+  Canvas.Fill.Kind := TBrushKind.None;
+  Canvas.Stroke.Thickness := 1;
+    Canvas.DrawRect(R, 0, 0, AllCorners, 0.1);
+    Canvas.Font.Size := 8;
 end;
 
 procedure TOMBElement.Resize(aBounds: TRectF);
@@ -916,10 +963,6 @@ end;
 procedure TOMBElement.SetHeight(const Value: TOMBProperty);
 begin
   FHeight := Value;
-end;
-
-procedure TOMBElement.SetJSON(const Value: ISuperObject);
-begin
 end;
 
 
@@ -1017,10 +1060,21 @@ begin
   end;
 end;
 
+procedure TOMBCell.ChangeSelected;
+begin
+  if Assigned(FOnChangeSelected) then
+    FOnChangeSelected(FSelected);
+
+end;
+
 constructor TOMBCell.Create(AOwner: TComponent);
 begin
   inherited;
+  FOnChangeSelected := nil;
   FData := TDictionary<String,TValue>.Create;
+  FImages := nil;
+  FEditMode := False;
+  FSelected := nil;
 end;
 
 destructor TOMBCell.Destroy;
@@ -1035,9 +1089,31 @@ begin
     Result := FCell.FindElement(aName);
 end;
 
+function TOMBCell.FindElementAt(X, Y: Single): TOMBElement;
+begin
+  Result := FCell.FindElementAt(X,Y);
+end;
+
 function TOMBCell.GetData(Index: String): TValue;
 begin
 
+end;
+
+procedure TOMBCell.Load(const Scheme: String);
+begin
+  FreeAndNil(FCell);
+  Cell := TOMBElement.Load(Scheme) as TOMBElement;
+end;
+
+procedure TOMBCell.MouseClick(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+var
+  Item : TOMBElement;
+begin
+  inherited;
+  Item := FindElementAt(X,Y);
+  Selected := Item;
+  Repaint;
 end;
 
 procedure TOMBCell.Paint;
@@ -1085,12 +1161,36 @@ begin
   FDataUpdateted := True;
 end;
 
+procedure TOMBCell.SetEditMode(const Value: Boolean);
+begin
+  FEditMode := Value;
+end;
+
+procedure TOMBCell.SetImages(const Value: TImageList);
+begin
+  FImages := Value;
+end;
+
+procedure TOMBCell.SetOnChangeSelected(const Value: TNotifyEvent);
+begin
+  FOnChangeSelected := Value;
+end;
+
 procedure TOMBCell.SetPlan(const Value: TStringList);
 begin
   FPlan := Value;
 end;
 
 
+
+procedure TOMBCell.SetSelected(const Value: TOMBElement);
+begin
+  if FSelected<>Value then
+  begin
+    FSelected := Value;
+    ChangeSelected;
+  end;
+end;
 
 { TOMBPersistent }
 
@@ -1129,13 +1229,6 @@ begin
   inherited;
 end;
 
-function TOMBObject.GetJSON: ISuperObject;
-begin
-  Result := SO;
-  Result.S[str_ClassName] := GetNodeName;
-  Result.S[str_Name] := Name;
-end;
-
 class function TOMBObject.GetNodeName: String;
 begin
   Result := ClassName.ToLower;
@@ -1172,6 +1265,15 @@ begin
   end;
 end;
 
+class function TOMBObject.Load(Doc: String): TOMBObject;
+var
+  Dc : IXMLDocument;
+begin
+  Dc := NewXMLDocument;
+  Dc.LoadFromXML(Doc);
+  Result := Load(Dc);
+end;
+
 procedure TOMBObject.LoadFromNode(aXMLNode: IXMLNode);
 begin
   Name := VarToStr(aXMLNode.Attributes[str_Name]);
@@ -1187,11 +1289,6 @@ procedure TOMBObject.SaveToNode(aXMLNode: IXMLNode);
 begin
   if FName<>'' then
     aXMLNode.Attributes[str_Name] := Name;
-end;
-
-procedure TOMBObject.SetJSON(const Value: ISuperObject);
-begin
-  FName := Value.S[str_Name];
 end;
 
 procedure TOMBObject.SetName(const Value: String);
@@ -1238,18 +1335,6 @@ begin
   if FStrikeOut then FFont.Style := FFont.Style + [TFontStyle.fsStrikeOut];
   if FBold then FFont.Style := FFont.Style + [TFontStyle.fsBold];
   Result := FFont;
-end;
-
-function TOMBFont.GetJSON: ISuperObject;
-begin
-  Result := SO;
-  Result.S[str_Family] := FFamily;
-  Result.F[str_Size] := FSize;
-  Result.I[str_Color] := FColor;
-  Result.B[str_Bold] := FBold;
-  Result.B[str_Underline] := FUnderline;
-  Result.B[str_Italic] := FItalic;
-  Result.B[str_StrikeOut] := FStrikeOut;
 end;
 
 function TOMBFont.IsNeedSave: Boolean;
@@ -1311,11 +1396,6 @@ begin
   FItalic := Value;
 end;
 
-procedure TOMBFont.SetJSON(const Value: ISuperObject);
-begin
-
-end;
-
 procedure TOMBFont.SetSize(const Value: Single);
 begin
   FSize := Value;
@@ -1346,12 +1426,6 @@ destructor TOMBText.Destroy;
 begin
   FreeAndNil(FFont);
   inherited;
-end;
-
-function TOMBText.GetJSON: ISuperObject;
-begin
-  Result := Inherited;
-  Result.O['font'] := FFont.JSON;
 end;
 
 procedure TOMBText.InternalPaint(Canvas: TCanvas);
@@ -1396,12 +1470,6 @@ end;
 procedure TOMBText.SetHorzAlign(const Value: TTextAlign);
 begin
   FHorzAlign := Value;
-end;
-
-procedure TOMBText.SetJSON(const Value: ISuperObject);
-begin
-  inherited;
-
 end;
 
 procedure TOMBText.SetText(const Value: String);
@@ -1555,7 +1623,7 @@ end;
 procedure TOMBImage.LoadFromNode(aXMLNode: IXMLNode);
 begin
   inherited;
-
+  FWrapMode := TImageWrapMode(GetEnumValue(PTypeInfo(TypeInfo(TImageWrapMode)), aXMLNode.Attributes[str_WrapMode]));
 end;
 
 procedure TOMBImage.SaveToNode(aXMLNode: IXMLNode);
@@ -1580,52 +1648,6 @@ begin
   FWrapMode := Value;
 end;
 
-{ TOMBStaticImage }
-
-constructor TOMBStaticImage.Create;
-begin
-  inherited;
-  FImage := TBitmap.Create;
-end;
-
-destructor TOMBStaticImage.Destroy;
-begin
-  FreeAndNil(FImage);
-  inherited;
-end;
-
-procedure TOMBStaticImage.LoadFromNode(aXMLNode: IXMLNode);
-begin
-  inherited;
-
-end;
-
-procedure TOMBStaticImage.SaveToNode(aXMLNode: IXMLNode);
-var
-  Bt : TBytesStream;
-  Node : IXMLNode;
-  Enc : TBase64Encoding;
-  S : String;
-begin
-  inherited;
-  Enc := TBase64Encoding.Create(80);
-  Bt := TBytesStream.Create;
-  try
-    Image.SaveToStream(Bt);
-    Node := aXMLNode.OwnerDocument.CreateNode(str_ImageBody, ntCData);
-    S :=  Enc.EncodeBytesToString(Bt.Bytes, Bt.Size);
-    Node.NodeValue := S;
-    aXMLNode.ChildNodes.Add(Node);
-  finally
-    FreeAndNil(Bt);
-    FreeAndNil(Enc);
-  end;
-end;
-
-procedure TOMBStaticImage.SetImage(const Value: TBitmap);
-begin
-  FImage.Assign(Value);
-end;
 
 initialization
   LClassList := TOMBClassCollection.Create;

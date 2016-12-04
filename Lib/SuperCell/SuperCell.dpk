@@ -33,11 +33,10 @@ requires
   dbrtl,
   IndySystem,
   IndyProtocols,
-  IndyCore;
+  IndyCore,
+  xmlrtl;
 
 contains
-  OMB.Cells in 'OMB.Cells.pas',
-  XSuperJSON in '..\SuperObject\XSuperJSON.pas',
-  XSuperObject in '..\SuperObject\XSuperObject.pas';
+  OMB.Cells in 'OMB.Cells.pas';
 
 end.
