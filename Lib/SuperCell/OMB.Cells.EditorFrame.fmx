@@ -1,0 +1,529 @@
+object OMBEditor: TOMBEditor
+  Size.Width = 685.000000000000000000
+  Size.Height = 511.000000000000000000
+  Size.PlatformDefault = False
+  object Rectangle2: TRectangle
+    Align = Contents
+    Fill.Color = xFFF8F8F8
+    Size.Width = 685.000000000000000000
+    Size.Height = 511.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Layout1: TLayout
+    Align = Left
+    Size.Width = 249.000000000000000000
+    Size.Height = 511.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object Rectangle1: TRectangle
+      Align = Contents
+      Fill.Color = xFFF0F0F0
+      Size.Width = 249.000000000000000000
+      Size.Height = 511.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Layout3: TLayout
+      Align = Top
+      Size.Width = 249.000000000000000000
+      Size.Height = 153.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object TreeView1: TTreeView
+        Align = Client
+        Size.Width = 249.000000000000000000
+        Size.Height = 153.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Viewport.Width = 245.000000000000000000
+        Viewport.Height = 149.000000000000000000
+      end
+    end
+    object Splitter2: TSplitter
+      Align = Top
+      Cursor = crVSplit
+      MinSize = 20.000000000000000000
+      Position.Y = 153.000000000000000000
+      Size.Width = 249.000000000000000000
+      Size.Height = 8.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Layout4: TLayout
+      Align = Client
+      Size.Width = 249.000000000000000000
+      Size.Height = 350.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      object lbProperties: TListBox
+        Align = Client
+        Size.Width = 249.000000000000000000
+        Size.Height = 350.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'transparentlistboxstyle'
+        TabOrder = 0
+        DisableFocusEffect = True
+        DefaultItemStyles.ItemStyle = ''
+        DefaultItemStyles.GroupHeaderStyle = ''
+        DefaultItemStyles.GroupFooterStyle = ''
+        Viewport.Width = 249.000000000000000000
+        Viewport.Height = 350.000000000000000000
+        object lbiAlign: TListBoxItem
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 12
+          object Text1: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Align'
+            TextSettings.HorzAlign = Leading
+          end
+          object cbAlign: TComboBox
+            Align = Right
+            Items.Strings = (
+              'Left'
+              'Right'
+              'Top'
+              'Bottom'
+              'Center'
+              'Client'
+              'Contents')
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+          end
+        end
+        object lbiWidth: TListBoxItem
+          Position.Y = 22.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 11
+          object Text2: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Width'
+            TextSettings.HorzAlign = Leading
+          end
+          object edWidth: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiHeight: TListBoxItem
+          Position.Y = 44.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 2
+          object Text3: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Height'
+            TextSettings.HorzAlign = Leading
+          end
+          object edHeight: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiColor: TListBoxItem
+          Position.Y = 66.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          object Text4: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Color'
+            TextSettings.HorzAlign = Leading
+          end
+          object cbColor: TComboColorBox
+            Align = Right
+            Color = claWhite
+            Margins.Right = 4.000000000000000000
+            Position.X = 115.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+          end
+        end
+        object lbiName: TListBoxItem
+          Position.Y = 88.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 1
+          object Text13: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Data name'
+            TextSettings.HorzAlign = Leading
+          end
+          object edDataName: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object ListBoxGroupHeader2: TListBoxGroupHeader
+          Position.Y = 110.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 4.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 14
+        end
+        object lbiMarginLeft: TListBoxItem
+          Position.Y = 114.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 10
+          object Text5: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Margin left'
+            TextSettings.HorzAlign = Leading
+          end
+          object edMarginLeft: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiMarginTop: TListBoxItem
+          Position.Y = 136.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 8
+          object Text6: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Margin top'
+            TextSettings.HorzAlign = Leading
+          end
+          object edMarginTop: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiMarginRight: TListBoxItem
+          Position.Y = 158.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 6
+          object Text7: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Margin right'
+            TextSettings.HorzAlign = Leading
+          end
+          object edMarginRight: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiMarginBottom: TListBoxItem
+          Position.Y = 180.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 4
+          object Text8: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Margin bottom'
+            TextSettings.HorzAlign = Leading
+          end
+          object edMarginBottom: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object ListBoxGroupHeader1: TListBoxGroupHeader
+          Position.Y = 202.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 4.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 13
+        end
+        object lbiPaddingLeft: TListBoxItem
+          Position.Y = 206.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 9
+          object Text9: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Padding left'
+            TextSettings.HorzAlign = Leading
+          end
+          object edPaddingLeft: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiPaddingTop: TListBoxItem
+          Position.Y = 228.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 7
+          object Text10: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Padding top'
+            TextSettings.HorzAlign = Leading
+          end
+          object edPaddingTop: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiPaddingRignt: TListBoxItem
+          Position.Y = 250.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 5
+          object Text11: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Padding right'
+            TextSettings.HorzAlign = Leading
+          end
+          object edPaddingRight: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+        object lbiPaddingBottom: TListBoxItem
+          Position.Y = 272.000000000000000000
+          Size.Width = 249.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 3
+          object Text12: TText
+            Align = Left
+            Locked = True
+            HitTest = False
+            Margins.Left = 4.000000000000000000
+            Position.X = 4.000000000000000000
+            Size.Width = 89.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Padding bottom'
+            TextSettings.HorzAlign = Leading
+          end
+          object edPaddingBottom: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 0
+            Position.X = 115.000000000000000000
+            Position.Y = 2.000000000000000000
+            Margins.Top = 2.000000000000000000
+            Margins.Right = 4.000000000000000000
+            Margins.Bottom = 2.000000000000000000
+            Size.Width = 130.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+      end
+    end
+  end
+  object Splitter1: TSplitter
+    Align = Left
+    Cursor = crHSplit
+    MinSize = 20.000000000000000000
+    Position.X = 249.000000000000000000
+    Size.Width = 8.000000000000000000
+    Size.Height = 511.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Layout2: TLayout
+    Align = Client
+    Size.Width = 428.000000000000000000
+    Size.Height = 511.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object ombCellView: TOMBCell
+      Align = Client
+      HitTest = True
+      Size.Width = 428.000000000000000000
+      Size.Height = 511.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+    end
+  end
+end
